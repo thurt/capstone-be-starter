@@ -28,6 +28,7 @@ module.exports = [
         statusCode: err.statusCode
       });
     } else {
+      console.stack(err);
       res.status(err.statusCode || 500);
       res.json({
         message: statuses[res.statusCode],
