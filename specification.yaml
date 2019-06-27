@@ -1,0 +1,200 @@
+openapi: 3.0.1
+info:
+  title: Backend API
+  version: "1.0.0"
+servers:
+  - url: http://localhost:3000
+    description: localhost
+components:
+  schemas:
+    User:
+      additionalProperties: false
+      type: object
+      properties:
+        username:
+          $ref: "#/components/schemas/username"
+        createdAt:
+          $ref: "#/components/schemas/timestamp"
+        updatedAt:
+          $ref: "#/components/schemas/timestamp"
+      required:
+        - username
+        - createdAt
+        - updatedAt
+    OperationalError:
+      allOf:
+        - type: object
+          properties:
+            message:
+              type: string
+          required:
+            - message
+        - $ref: "#/components/schemas/ErrorStatusCode"
+    ErrorStatusCode:
+      type: object
+      properties:
+        statusCode:
+          type: integer
+          minimum: 400
+          maximum: 599
+      required:
+        - statusCode
+    SuccessStatusCode:
+      type: object
+      properties:
+        statusCode:
+          type: integer
+          minimum: 200
+          maximum: 399
+      required:
+        - statusCode
+    username:
+      type: string
+      minLength: 3
+      maxLength: 20
+    password:
+      type: string
+      minLength: 3
+      maxLength: 20
+    timestamp:
+      type: string
+      format: date-time
+  securitySchemes:
+    bearerAuth: # arbitrary name for the security scheme
+      type: http
+      scheme: bearer
+      bearerFormat: JWT # optional, arbitrary value for documentation purposes
+  headers:
+    WWW-Authenticate:
+      description: Includes the URI location to receive a bearer token
+      required: true
+      schema:
+        type: string
+        enum:
+          - Bearer realm="POST your username and password to /auth/login to receive a token"
+  responses:
+    400:
+      description: Bad Request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/OperationalError"
+    401:
+      description: Unauthorized
+      headers:
+        WWW-Authenticate:
+          $ref: "#/components/headers/WWW-Authenticate"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/OperationalError"
+    403:
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/OperationalError"
+    404:
+      description: Not Found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/OperationalError"
+paths:
+  /auth/login:
+    post:
+      summary: Login user
+      operationId: login
+      x-controller: auth
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              additionalProperties: false
+              type: object
+              properties:
+                username:
+                  $ref: "#/components/schemas/username"
+                password:
+                  $ref: "#/components/schemas/password"
+              required:
+                - username
+                - password
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - type: object
+                    properties:
+                      username:
+                        $ref: "#/components/schemas/username"
+                      token:
+                        type: string
+                    required:
+                      - username
+                      - token
+                  - $ref: "#/components/schemas/SuccessStatusCode"
+        400:
+          $ref: "#/components/responses/400"
+  /auth/logout:
+    get:
+      summary: Logout a user
+      operationId: logout
+      x-controller: auth
+      tags:
+        - Auth
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessStatusCode"
+        401:
+          $ref: "#/components/responses/401"
+  /users:
+    post:
+      summary: Create a new user
+      operationId: createUser
+      x-controller: users
+      tags:
+        - Users
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              additionalProperties: false
+              type: object
+              properties:
+                username:
+                  $ref: "#/components/schemas/username"
+                password:
+                  $ref: "#/components/schemas/password"
+              required:
+                - username
+                - password
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - type: object
+                    properties:
+                      username:
+                        $ref: "#/components/schemas/username"
+                    required:
+                      - username
+                  - $ref: "#/components/schemas/SuccessStatusCode"
+        400:
+          $ref: "#/components/responses/400"
